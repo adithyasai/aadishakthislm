@@ -56,3 +56,9 @@ wandb/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Cleanup and temporary artifacts
+/temp/
+
+# Ignore data directory under solution
+/solution/data/

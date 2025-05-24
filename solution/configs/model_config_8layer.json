@@ -1,0 +1,19 @@
+{
+    "model_type": "gpt2",
+    "vocab_size": 50000,
+    "n_positions": 512,
+    "n_ctx": 512,
+    "n_embd": 768,
+    "n_layer": 8,
+    "n_head": 12,
+    "pad_token_id": 0,
+    "attention_type": "default",
+    "training": {
+        "batch_size": 6,
+        "learning_rate": 4e-5,
+        "warmup_steps": 1000,
+        "max_steps": 50000,
+        "save_steps": 1000,
+        "eval_steps": 1000
+    }
+}

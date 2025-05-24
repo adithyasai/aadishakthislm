@@ -1,0 +1,7 @@
+filename,evaluation_id,type,language_code,system,system_a,system_b
+comparative_te_comp_27c11e67_20250520_142149.html,comp_27c11e67,comparative,te,,improved,neural
+comparative_hi_comp_61ad4bb3_20250520_142149.html,comp_61ad4bb3,comparative,hi,,improved,neural
+single_te_improved_single_284f46d7_20250520_142149.html,single_284f46d7,single,te,improved,,
+single_te_neural_single_ce6603fb_20250520_142149.html,single_ce6603fb,single,te,neural,,
+single_hi_improved_single_ba57cdd5_20250520_142150.html,single_ba57cdd5,single,hi,improved,,
+single_hi_neural_single_fbbcb239_20250520_142150.html,single_fbbcb239,single,hi,neural,,

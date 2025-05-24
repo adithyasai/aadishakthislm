@@ -1,102 +1,101 @@
-from typing import List, Dict, Optional
-from tokenizers import Tokenizer, models, pre_tokenizers, decoders
-from tokenizers.trainers import BpeTrainer
-from tokenizers.processors import TemplateProcessing
 import sentencepiece as spm
-from pathlib import Path
+from typing import Dict, List, Union, Optional
 import json
+import os
 
 class IndicTokenizer:
-    def __init__(self, config_path: str = "../configs/model_config.json"):
-        self.config = self._load_config(config_path)
-        self.vocab_size = self.config.get('vocab_size', 32000)
-        self.tokenizer = None
-        self.sp_model = None
-        
-    def _load_config(self, config_path: str) -> Dict:
+    def __init__(self, config_path: str = "configs/model_config.json"):
         with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
-    def train_tokenizer(self, 
-                       train_files: List[str],
-                       output_dir: str,
-                       model_prefix: str = "indic_tokenizer") -> None:
-        """Train a SentencePiece tokenizer on Telugu and Hindi data"""
-        # Create output directory if it doesn't exist
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
+            self.config = json.load(f)
         
-        # Configure SentencePiece training
-        spm.SentencePieceTrainer.train(
-            input=train_files,
-            model_prefix=f"{output_dir}/{model_prefix}",
-            vocab_size=self.vocab_size,
-            character_coverage=0.9995,  # High coverage for Indic scripts
-            model_type="bpe",          # Using BPE algorithm
-            user_defined_symbols=["<pad>", "<s>", "</s>", "<mask>", "<te>", "<hi>"],
-            pad_id=0,
-            bos_id=1,
-            eos_id=2,
-            unk_id=3,
-            input_sentence_size=1000000,
-            shuffle_input_sentence=True,
-            train_extremely_large_corpus=True
-        )
-        
-        # Load the trained model
         self.sp_model = spm.SentencePieceProcessor()
-        self.sp_model.load(f"{output_dir}/{model_prefix}.model")
+        model_path = os.path.join("models", "indic_slm_tokenizer.model")
+        if os.path.exists(model_path):
+            self.sp_model.load(model_path)
         
-        # Initialize Hugging Face tokenizer with SentencePiece model
-        self.tokenizer = Tokenizer(models.BPE.from_file(
-            f"{output_dir}/{model_prefix}.model",
-            f"{output_dir}/{model_prefix}.vocab"
-        ))
-        
-        # Add special tokens processing
-        self.tokenizer.post_processor = TemplateProcessing(
-            single="<s> $A </s>",
-            pair="<s> $A </s> $B </s>",
-            special_tokens=[
-                ("<s>", self.sp_model.bos_id()),
-                ("</s>", self.sp_model.eos_id()),
-            ],
-        )
-        
-    def load_tokenizer(self, model_path: str) -> None:
-        """Load a pretrained tokenizer"""
-        self.sp_model = spm.SentencePieceProcessor()
-        self.sp_model.load(f"{model_path}.model")
-        self.tokenizer = Tokenizer.from_file(f"{model_path}.json")
+        # Define special tokens
+        self.pad_token = "[PAD]"
+        self.pad_token_id = 0  # Usually 0 in SentencePiece
+        self.unk_token = "[UNK]"
+        self.unk_token_id = 1  # Usually 1 in SentencePiece
+        self.bos_token = "[BOS]"
+        self.bos_token_id = 2
+        self.eos_token = "[EOS]"
+        self.eos_token_id = 3
     
-    def save_tokenizer(self, output_path: str) -> None:
-        """Save the tokenizer files"""
-        if self.tokenizer is None:
-            raise ValueError("Tokenizer not initialized. Train or load a tokenizer first.")
-        self.tokenizer.save(f"{output_path}.json")
-    
-    def encode(self, 
-              text: str, 
-              lang: str,
-              add_special_tokens: bool = True) -> Dict:
-        """Encode text with language-specific prefix"""
-        if lang not in ['te', 'hi']:
-            raise ValueError("Language must be 'te' or 'hi'")
+    def encode(self, text: str) -> Dict[str, List[int]]:
+        """Encode text to token ids"""
+        if not text:
+            return {"input_ids": [], "attention_mask": []}
         
-        # Add language token prefix
-        text = f"<{lang}> {text}" if add_special_tokens else text
+        # Add BOS and EOS tokens
+        text = f"{self.bos_token} {text} {self.eos_token}"
         
         # Encode the text
-        encoding = self.tokenizer.encode(text)
+        token_ids = self.sp_model.encode(text)
+        attention_mask = [1] * len(token_ids)
+        
         return {
-            'input_ids': encoding.ids,
-            'attention_mask': [1] * len(encoding.ids),
-            'token_type_ids': [0] * len(encoding.ids)
+            "input_ids": token_ids,
+            "attention_mask": attention_mask
         }
     
     def decode(self, token_ids: List[int]) -> str:
-        """Decode token IDs back to text"""
-        return self.tokenizer.decode(token_ids)
-    
-    def get_vocab_size(self) -> int:
-        """Get the vocabulary size"""
-        return self.vocab_size
+        """Decode token ids back to text"""
+        text = self.sp_model.decode(token_ids)
+        # Remove special tokens if present
+        text = text.replace(self.bos_token, "").replace(self.eos_token, "").strip()
+        return text
+        
+    def train_tokenizer(
+        self, 
+        input_files: List[str], 
+        output_dir: str, 
+        model_prefix: str,
+        vocab_size: Optional[int] = None
+    ) -> None:
+        """
+        Train a SentencePiece tokenizer on input files
+        
+        Args:
+            input_files: List of text files to train on
+            output_dir: Directory to save the tokenizer model
+            model_prefix: Prefix for the model files
+            vocab_size: Size of vocabulary (if None, uses value from config)
+        """
+        if vocab_size is None:
+            vocab_size = self.config.get("vocab_size", 32000)
+        
+        print(f"Training SentencePiece tokenizer with vocabulary size: {vocab_size}")
+        
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Special tokens to be added
+        user_defined_symbols = [
+            self.pad_token,
+            self.unk_token,
+            self.bos_token,
+            self.eos_token
+        ]
+        
+        # Train the SentencePiece model
+        spm.SentencePieceTrainer.train(
+            input=",".join(input_files),
+            model_prefix=os.path.join(output_dir, model_prefix),
+            vocab_size=vocab_size,
+            pad_id=self.pad_token_id,
+            unk_id=self.unk_token_id,
+            bos_id=self.bos_token_id,
+            eos_id=self.eos_token_id,
+            user_defined_symbols=user_defined_symbols,
+            model_type="bpe",  # Using BPE algorithm
+            character_coverage=0.9995,  # High coverage for Indic scripts
+            input_sentence_size=1000000,  # Limit the number of training sentences to process
+            shuffle_input_sentence=True,  # Shuffle the training data
+            normalization_rule_name="nmt_nfkc"  # Standard normalization for NMT
+        )
+        
+        # Load the newly trained model
+        self.sp_model.load(os.path.join(output_dir, f"{model_prefix}.model"))
+        print(f"Tokenizer trained and saved to {output_dir}/{model_prefix}.model")

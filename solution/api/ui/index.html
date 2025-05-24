@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLM Summarization UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+        textarea { width: 100%; height: 200px; font-size: 1rem; padding: 10px; }
+        button { padding: 10px 20px; font-size: 1rem; margin-top: 10px; }
+        #result { margin-top: 20px; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; min-height: 50px; }
+    </style>
+</head>
+<body>
+    <h1>SLM ONNX Summarization</h1>
+    <textarea id="inputText" placeholder="Enter text to summarize..."></textarea><br>
+    <button id="summarizeBtn">Summarize</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('summarizeBtn').addEventListener('click', async () => {
+            const text = document.getElementById('inputText').value;
+            if (!text.trim()) {
+                document.getElementById('result').innerText = 'Please enter some text.';
+                return;
+            }
+            document.getElementById('result').innerText = 'Summarizing...';
+            try {
+                const response = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texts: text })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || response.statusText);
+                }
+                const data = await response.json();
+                document.getElementById('result').innerText = data.summaries[0];
+            } catch (err) {
+                document.getElementById('result').innerText = 'Error: ' + err;
+            }
+        });
+    </script>
+</body>
+</html>

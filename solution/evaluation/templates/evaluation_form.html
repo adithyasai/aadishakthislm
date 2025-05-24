@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLM Human Evaluation Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2c5282;
+        }
+        .container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .language-tag {
+            display: inline-block;
+            background-color: #4299e1;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+        .evaluation-section {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .text-box {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .instructions {
+            background-color: #ebf8ff;
+            padding: 15px;
+            border-left: 4px solid #4299e1;
+            margin-bottom: 20px;
+        }
+        .rating-scale {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .rating-option {
+            text-align: center;
+            width: 18%;
+        }
+        input[type="radio"] {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin: 10px 0 5px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        .submit-btn {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            background-color: #3182ce;
+        }
+        .summary-comparison {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .summary-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        .evaluation-criteria {
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SLM Human Evaluation Form</h1>
+    <div class="instructions">
+        <h3>Instructions for Evaluators</h3>
+        <p>Welcome to the SLM (Summarization Language Model) human evaluation task. Your feedback will help improve summarization quality for Indic languages.</p>
+        <p>Please carefully read the original text and the provided summaries, then evaluate each summary according to the criteria below:</p>
+        <ul>
+            <li><strong>Fluency</strong>: How grammatically correct and readable is the summary?</li>
+            <li><strong>Coherence</strong>: How well-organized and logically connected is the summary?</li>
+            <li><strong>Relevance</strong>: How well does the summary capture the key points of the original text?</li>
+            <li><strong>Adequacy</strong>: How well does the summary convey the main message without missing critical information?</li>
+            <li><strong>Overall Quality</strong>: Your general assessment of the summary's quality.</li>
+        </ul>
+        <p>Rate each aspect on a 1-5 scale where: 1=Poor, 2=Fair, 3=Good, 4=Very Good, 5=Excellent</p>
+    </div>
+
+    <form id="evaluation-form" action="/submit_evaluation" method="post">
+        <input type="hidden" name="evaluation_id" id="evaluation_id" value="{{evaluation_id}}">
+        <input type="hidden" name="document_id" id="document_id" value="{{document_id}}">
+        <input type="hidden" name="evaluator_id" id="evaluator_id" value="{{evaluator_id}}">
+        
+        <!-- Original Text Section -->
+        <div class="container">
+            <h2>Original Text <span class="language-tag">{{language_name}}</span></h2>
+            <div class="text-box" id="original-text">
+                {{original_text}}
+            </div>
+        </div>
+        
+        <!-- Reference Summary Section (if available) -->
+        {{#reference_summary}}
+        <div class="container">
+            <h2>Reference Summary <span class="language-tag">{{language_name}}</span></h2>
+            <div class="text-box" id="reference-summary">
+                {{reference_summary}}
+            </div>
+        </div>
+        {{/reference_summary}}
+
+        <!-- Summary Evaluation Sections -->
+        <div class="container">
+            <h2>Summary Evaluation</h2>
+            
+            <div class="summary-comparison">
+                <!-- System A Summary -->
+                <div class="summary-box">
+                    <h3>Summary A</h3>
+                    <div class="text-box" id="system-a-summary">
+                        {{system_a_summary}}
+                    </div>
+                </div>
+                
+                <!-- System B Summary -->
+                <div class="summary-box">
+                    <h3>Summary B</h3>
+                    <div class="text-box" id="system-b-summary">
+                        {{system_b_summary}}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Evaluation for System A -->
+            <div class="evaluation-section">
+                <h3>Evaluate Summary A</h3>
+                
+                <!-- Fluency Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_a_fluency">Fluency:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_fluency" value="1" id="a_fluency_1" required>
+                            <label for="a_fluency_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_fluency" value="2" id="a_fluency_2">
+                            <label for="a_fluency_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_fluency" value="3" id="a_fluency_3">
+                            <label for="a_fluency_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_fluency" value="4" id="a_fluency_4">
+                            <label for="a_fluency_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_fluency" value="5" id="a_fluency_5">
+                            <label for="a_fluency_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Coherence Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_a_coherence">Coherence:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_coherence" value="1" id="a_coherence_1" required>
+                            <label for="a_coherence_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_coherence" value="2" id="a_coherence_2">
+                            <label for="a_coherence_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_coherence" value="3" id="a_coherence_3">
+                            <label for="a_coherence_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_coherence" value="4" id="a_coherence_4">
+                            <label for="a_coherence_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_coherence" value="5" id="a_coherence_5">
+                            <label for="a_coherence_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Relevance Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_a_relevance">Relevance:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_relevance" value="1" id="a_relevance_1" required>
+                            <label for="a_relevance_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_relevance" value="2" id="a_relevance_2">
+                            <label for="a_relevance_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_relevance" value="3" id="a_relevance_3">
+                            <label for="a_relevance_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_relevance" value="4" id="a_relevance_4">
+                            <label for="a_relevance_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_relevance" value="5" id="a_relevance_5">
+                            <label for="a_relevance_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Adequacy Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_a_adequacy">Adequacy:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_adequacy" value="1" id="a_adequacy_1" required>
+                            <label for="a_adequacy_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_adequacy" value="2" id="a_adequacy_2">
+                            <label for="a_adequacy_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_adequacy" value="3" id="a_adequacy_3">
+                            <label for="a_adequacy_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_adequacy" value="4" id="a_adequacy_4">
+                            <label for="a_adequacy_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_adequacy" value="5" id="a_adequacy_5">
+                            <label for="a_adequacy_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Overall Quality Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_a_overall">Overall Quality:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_overall" value="1" id="a_overall_1" required>
+                            <label for="a_overall_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_overall" value="2" id="a_overall_2">
+                            <label for="a_overall_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_overall" value="3" id="a_overall_3">
+                            <label for="a_overall_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_overall" value="4" id="a_overall_4">
+                            <label for="a_overall_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_a_overall" value="5" id="a_overall_5">
+                            <label for="a_overall_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <label for="system_a_comments">Comments on Summary A:</label>
+                <textarea name="system_a_comments" id="system_a_comments" placeholder="Please provide any additional feedback on this summary..."></textarea>
+            </div>
+            
+            <!-- Evaluation for System B -->
+            <div class="evaluation-section">
+                <h3>Evaluate Summary B</h3>
+                
+                <!-- Fluency Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_b_fluency">Fluency:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_fluency" value="1" id="b_fluency_1" required>
+                            <label for="b_fluency_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_fluency" value="2" id="b_fluency_2">
+                            <label for="b_fluency_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_fluency" value="3" id="b_fluency_3">
+                            <label for="b_fluency_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_fluency" value="4" id="b_fluency_4">
+                            <label for="b_fluency_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_fluency" value="5" id="b_fluency_5">
+                            <label for="b_fluency_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Coherence Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_b_coherence">Coherence:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_coherence" value="1" id="b_coherence_1" required>
+                            <label for="b_coherence_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_coherence" value="2" id="b_coherence_2">
+                            <label for="b_coherence_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_coherence" value="3" id="b_coherence_3">
+                            <label for="b_coherence_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_coherence" value="4" id="b_coherence_4">
+                            <label for="b_coherence_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_coherence" value="5" id="b_coherence_5">
+                            <label for="b_coherence_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Relevance Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_b_relevance">Relevance:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_relevance" value="1" id="b_relevance_1" required>
+                            <label for="b_relevance_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_relevance" value="2" id="b_relevance_2">
+                            <label for="b_relevance_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_relevance" value="3" id="b_relevance_3">
+                            <label for="b_relevance_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_relevance" value="4" id="b_relevance_4">
+                            <label for="b_relevance_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_relevance" value="5" id="b_relevance_5">
+                            <label for="b_relevance_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Adequacy Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_b_adequacy">Adequacy:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_adequacy" value="1" id="b_adequacy_1" required>
+                            <label for="b_adequacy_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_adequacy" value="2" id="b_adequacy_2">
+                            <label for="b_adequacy_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_adequacy" value="3" id="b_adequacy_3">
+                            <label for="b_adequacy_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_adequacy" value="4" id="b_adequacy_4">
+                            <label for="b_adequacy_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_adequacy" value="5" id="b_adequacy_5">
+                            <label for="b_adequacy_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Overall Quality Rating -->
+                <div class="evaluation-criteria">
+                    <label for="system_b_overall">Overall Quality:</label>
+                    <div class="rating-scale">
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_overall" value="1" id="b_overall_1" required>
+                            <label for="b_overall_1">1<br>Poor</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_overall" value="2" id="b_overall_2">
+                            <label for="b_overall_2">2<br>Fair</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_overall" value="3" id="b_overall_3">
+                            <label for="b_overall_3">3<br>Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_overall" value="4" id="b_overall_4">
+                            <label for="b_overall_4">4<br>Very Good</label>
+                        </div>
+                        <div class="rating-option">
+                            <input type="radio" name="system_b_overall" value="5" id="b_overall_5">
+                            <label for="b_overall_5">5<br>Excellent</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <label for="system_b_comments">Comments on Summary B:</label>
+                <textarea name="system_b_comments" id="system_b_comments" placeholder="Please provide any additional feedback on this summary..."></textarea>
+            </div>
+            
+            <!-- Comparative Evaluation -->
+            <div class="evaluation-section">
+                <h3>Direct Comparison</h3>
+                <p>Which summary did you find better overall?</p>
+                <div class="rating-scale">
+                    <div class="rating-option">
+                        <input type="radio" name="direct_comparison" value="a_much_better" id="a_much_better" required>
+                        <label for="a_much_better">Summary A<br>much better</label>
+                    </div>
+                    <div class="rating-option">
+                        <input type="radio" name="direct_comparison" value="a_slightly_better" id="a_slightly_better">
+                        <label for="a_slightly_better">Summary A<br>slightly better</label>
+                    </div>
+                    <div class="rating-option">
+                        <input type="radio" name="direct_comparison" value="equal" id="equal">
+                        <label for="equal">About<br>equal</label>
+                    </div>
+                    <div class="rating-option">
+                        <input type="radio" name="direct_comparison" value="b_slightly_better" id="b_slightly_better">
+                        <label for="b_slightly_better">Summary B<br>slightly better</label>
+                    </div>
+                    <div class="rating-option">
+                        <input type="radio" name="direct_comparison" value="b_much_better" id="b_much_better">
+                        <label for="b_much_better">Summary B<br>much better</label>
+                    </div>
+                </div>
+                
+                <label for="comparison_reason">Reason for your preference:</label>
+                <textarea name="comparison_reason" id="comparison_reason" placeholder="Please explain why you preferred one summary over the other..."></textarea>
+            </div>
+            
+            <!-- General Comments -->
+            <div class="evaluation-section">
+                <h3>Additional Feedback</h3>
+                <label for="general_comments">Any general comments about the summaries or evaluation process:</label>
+                <textarea name="general_comments" id="general_comments" placeholder="Please provide any additional comments or suggestions..."></textarea>
+            </div>
+        </div>
+        
+        <button type="submit" class="submit-btn">Submit Evaluation</button>
+    </form>
+    
+    <script>
+        // Simple form validation
+        document.getElementById('evaluation-form').addEventListener('submit', function(event) {
+            const requiredRadios = [
+                'system_a_fluency', 'system_a_coherence', 'system_a_relevance', 
+                'system_a_adequacy', 'system_a_overall', 'system_b_fluency', 
+                'system_b_coherence', 'system_b_relevance', 'system_b_adequacy', 
+                'system_b_overall', 'direct_comparison'
+            ];
+            
+            let valid = true;
+            
+            // Check that all radio button groups have a selection
+            for (const radioName of requiredRadios) {
+                const radioGroup = document.getElementsByName(radioName);
+                let checked = false;
+                
+                for (const radio of radioGroup) {
+                    if (radio.checked) {
+                        checked = true;
+                        break;
+                    }
+                }
+                
+                if (!checked) {
+                    valid = false;
+                    alert(`Please select a rating for all criteria before submitting.`);
+                    break;
+                }
+            }
+            
+            if (!valid) {
+                event.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
